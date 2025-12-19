@@ -13,17 +13,14 @@ import {
   createUIMessageStreamResponse,
   type ToolSet
 } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createWorkersAI } from 'workers-ai-provider';
 import { processToolCalls, cleanupMessages } from "./utils";
 import { tools, executions } from "./tools";
-// import { env } from "cloudflare:workers";
+import { env } from "cloudflare:workers";
 
-const model = openai("gpt-4o-2024-11-20");
-// Cloudflare AI Gateway
-// const openai = createOpenAI({
-//   apiKey: env.OPENAI_API_KEY,
-//   baseURL: env.GATEWAY_BASE_URL,
-// });
+const workersAI = createWorkersAI({ binding: env.AI });
+const model = workersAI("@cf/meta/llama-3.1-8b-instruct");
+
 
 /**
  * Chat Agent implementation that handles real-time AI chat interactions
@@ -42,8 +39,8 @@ export class Chat extends AIChatAgent<Env> {
 
     // Collect all tools, including MCP tools
     const allTools = {
-      ...tools,
-      ...this.mcp.getAITools()
+      ...tools
+      // ...this.mcp.getAITools() // Temporarily removed to avoid MCP initialization error
     };
 
     const stream = createUIMessageStream({
@@ -112,15 +109,15 @@ export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext) {
     const url = new URL(request.url);
 
-    if (url.pathname === "/check-open-ai-key") {
-      const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+    if (url.pathname === "/check-ai-binding") {
+      const hasAIBinding = !!env.AI;
       return Response.json({
-        success: hasOpenAIKey
+        success: hasAIBinding
       });
     }
-    if (!process.env.OPENAI_API_KEY) {
+    if (!env.AI) {
       console.error(
-        "OPENAI_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
+        "AI binding is not set, ensure it is configured in wrangler.jsonc and deployed"
       );
     }
     return (
