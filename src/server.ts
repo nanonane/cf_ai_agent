@@ -13,14 +13,13 @@ import {
   createUIMessageStreamResponse,
   type ToolSet
 } from "ai";
-import { createWorkersAI } from 'workers-ai-provider';
+import { createWorkersAI } from "workers-ai-provider";
 import { processToolCalls, cleanupMessages } from "./utils";
 import { tools, executions } from "./tools";
 import { env } from "cloudflare:workers";
 
 const workersAI = createWorkersAI({ binding: env.AI });
-const model = workersAI("@cf/meta/llama-3.1-8b-instruct");
-
+const model = workersAI("@cf/meta/llama-3.3-70b-instruct-fp8-fast");
 
 /**
  * Chat Agent implementation that handles real-time AI chat interactions
@@ -58,7 +57,7 @@ export class Chat extends AIChatAgent<Env> {
         });
 
         const result = streamText({
-          system: `You are a helpful assistant that can do various tasks... 
+          system: `You are a helpful and friendly personal assistant that can do various tasks and answer various questions.
 
 ${getSchedulePrompt({ date: new Date() })}
 
@@ -82,6 +81,7 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
 
     return createUIMessageStreamResponse({ stream });
   }
+
   async executeTask(description: string, _task: Schedule<string>) {
     await this.saveMessages([
       ...this.messages,
