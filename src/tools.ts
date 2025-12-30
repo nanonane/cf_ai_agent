@@ -21,17 +21,60 @@ const getWeatherInformation = tool({
 
 /**
  * Local time tool that executes automatically
- * Since it includes an execute function, it will run without user confirmation
- * This is suitable for low-risk operations that don't need oversight
+ * Uses Intl.DateTimeFormat to get the actual local time for a specified location
  */
 const getLocalTime = tool({
-  description: "get the local time for a specified location",
-  inputSchema: z.object({ location: z.string() }),
+  description: "get the local time for a specified location or timezone",
+  inputSchema: z.object({
+    location: z
+      .string()
+      .describe("IANA timezone (e.g., 'America/New_York', 'Europe/London')")
+  }),
   execute: async ({ location }) => {
-    console.log(`Getting local time for ${location}`);
-    return "10am";
+    return getLocalTimeByLocation(location);
   }
 });
+
+/**
+ * Helper function to get time using Intl.DateTimeFormat
+ */
+function getLocalTimeByLocation(location: string): string {
+  if (!location || location.trim().length === 0) {
+    throw new Error("Location cannot be empty");
+  }
+
+  const normalizedLocation = location.trim();
+
+  try {
+    // Create a new Date object for the current time
+    const now = new Date();
+
+    // Use Intl.DateTimeFormat to format the time in the specified timezone
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: normalizedLocation,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    });
+
+    const timeString = formatter.format(now);
+
+    return `Local time in ${normalizedLocation}: ${timeString}`;
+  } catch (error) {
+    // If the timezone is invalid, throw a descriptive error
+    if (error instanceof RangeError) {
+      throw new Error(
+        `"${normalizedLocation}" is not a valid timezone or location. ` +
+          `Please use a valid IANA timezone (e.g., "America/New_York", "Asia/Tokyo").`
+      );
+    }
+    throw error;
+  }
+}
 
 const scheduleTask = tool({
   description: "A tool to schedule a task to be executed at a later time",
