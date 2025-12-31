@@ -35,47 +35,6 @@ const getLocalTime = tool({
   }
 });
 
-/**
- * Helper function to get time using Intl.DateTimeFormat
- */
-function getLocalTimeByLocation(location: string): string {
-  if (!location || location.trim().length === 0) {
-    throw new Error("Location cannot be empty");
-  }
-
-  const normalizedLocation = location.trim();
-
-  try {
-    // Create a new Date object for the current time
-    const now = new Date();
-
-    // Use Intl.DateTimeFormat to format the time in the specified timezone
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: normalizedLocation,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true
-    });
-
-    const timeString = formatter.format(now);
-
-    return `Local time in ${normalizedLocation}: ${timeString}`;
-  } catch (error) {
-    // If the timezone is invalid, throw a descriptive error
-    if (error instanceof RangeError) {
-      throw new Error(
-        `"${normalizedLocation}" is not a valid timezone or location. ` +
-          `Please use a valid IANA timezone (e.g., "America/New_York", "Asia/Tokyo").`
-      );
-    }
-    throw error;
-  }
-}
-
 const scheduleTask = tool({
   description: "A tool to schedule a task to be executed at a later time",
   inputSchema: scheduleSchema,
@@ -174,3 +133,42 @@ export const executions = {
     return `The weather in ${city} is sunny`;
   }
 };
+
+/*******************
+ * Helper Functions
+ *******************/
+
+/**
+ * Get time using Intl.DateTimeFormat
+ */
+function getLocalTimeByLocation(location: string): string {
+  if (!location || location.trim().length === 0) {
+    throw new Error("Location cannot be empty");
+  }
+
+  const normalizedLocation = location.trim();
+
+  try {
+    // Create a new Date object for the current time
+    const now = new Date();
+
+    // Use Intl.DateTimeFormat to format the time in the specified timezone
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: normalizedLocation,
+      dateStyle: "full",
+      timeStyle: "long"
+    });
+
+    const timeString = formatter.format(now);
+    return `Local time in ${normalizedLocation}: ${timeString}`;
+  } catch (error) {
+    // If the timezone is invalid, throw a descriptive error
+    if (error instanceof RangeError) {
+      throw new Error(
+        `"${normalizedLocation}" is not a valid timezone or location. ` +
+          `Please use a valid IANA timezone (e.g., "America/New_York", "Asia/Tokyo").`
+      );
+    }
+    throw error;
+  }
+}

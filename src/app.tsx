@@ -93,7 +93,7 @@ export default function Chat() {
   // Agent
   const agent = useAgent({
     agent: "chat",
-    name: currentConversationId || "default"
+    name: currentConversationId || "default" // One agent instance per conversation
   });
 
   const [agentInput, setAgentInput] = useState("");
