@@ -13,7 +13,7 @@ import { Avatar } from "@/components/avatar/Avatar";
 import { Toggle } from "@/components/toggle/Toggle";
 import { Textarea } from "@/components/textarea/Textarea";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
-import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
+import { ToolInvocationCard } from "@/components/card/ToolInvocationCard";
 
 // Icon imports
 import {
@@ -29,7 +29,8 @@ import {
 // List of tools that require human confirmation
 // NOTE: this should match the tools that don't have execute functions in tools.ts
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
-  "getWeatherInformation"
+  "getWeatherInformation",
+  "composeEmail"
 ];
 
 export default function Chat() {
@@ -351,11 +352,11 @@ export default function Chat() {
                     <ul className="text-sm text-left space-y-2">
                       <li className="flex items-center gap-2">
                         <span className="text-[#F48120]">•</span>
-                        <span>Weather information for any city</span>
+                        <span>Local time in different locations</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="text-[#F48120]">•</span>
-                        <span>Local time in different locations</span>
+                        <span>Drafting and Email to someone</span>
                       </li>
                     </ul>
                   </div>

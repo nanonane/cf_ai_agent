@@ -3,6 +3,7 @@ import type { ToolUIPart } from "ai";
 import { Robot, CaretDown } from "@phosphor-icons/react";
 import { Button } from "@/components/button/Button";
 import { Card } from "@/components/card/Card";
+import { EmailToolInvocationCard } from "@/components/card/EmailToolInvocationCard";
 import { APPROVAL } from "@/shared";
 
 interface ToolResultWithContent {
@@ -39,9 +40,10 @@ export function ToolInvocationCard({
   toolCallId,
   needsConfirmation,
   onSubmit
-  // addToolResult
 }: ToolInvocationCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const toolName = toolUIPart.type.replace("tool-", "");
+  const isEmailTool = toolName === "composeEmail";
 
   return (
     <Card className="p-4 my-3 w-full max-w-[500px] rounded-md bg-neutral-100 dark:bg-neutral-900 overflow-hidden">
@@ -74,14 +76,16 @@ export function ToolInvocationCard({
           className="overflow-y-auto"
           style={{ maxHeight: isExpanded ? "180px" : "0px" }}
         >
-          <div className="mb-3">
-            <h5 className="text-xs font-medium mb-1 text-muted-foreground">
-              Arguments:
-            </h5>
-            <pre className="bg-background/80 p-2 rounded-md text-xs overflow-auto whitespace-pre-wrap break-words max-w-[450px]">
-              {JSON.stringify(toolUIPart.input, null, 2)}
-            </pre>
-          </div>
+          {!isEmailTool && (
+            <div className="mb-3">
+              <h5 className="text-xs font-medium mb-1 text-muted-foreground">
+                Arguments:
+              </h5>
+              <pre className="bg-background/80 p-2 rounded-md text-xs overflow-auto whitespace-pre-wrap break-words max-w-[450px]">
+                {JSON.stringify(toolUIPart.input, null, 2)}
+              </pre>
+            </div>
+          )}
 
           {needsConfirmation && toolUIPart.state === "input-available" && (
             <div className="flex gap-2 justify-end">
@@ -132,6 +136,13 @@ export function ToolInvocationCard({
                 })()}
               </pre>
             </div>
+          )}
+
+          {isEmailTool && (
+            <EmailToolInvocationCard
+              toolUIPart={toolUIPart}
+              toolCallId={toolCallId}
+            />
           )}
         </div>
       </div>

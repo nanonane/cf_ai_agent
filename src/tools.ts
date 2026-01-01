@@ -111,6 +111,29 @@ const cancelScheduledTask = tool({
 });
 
 /**
+ * Tool to draft an email
+ */
+const composeEmail = tool({
+  description: "draft an email with given subject and recipient",
+  inputSchema: z.object({
+    to: z.string().describe("Recipient email address"),
+    subject: z.string().describe("Email subject"),
+    body: z.string().describe("Email body content")
+  }),
+  execute: async ({ to, subject, body }) => {
+    // Return a preview of the composed email
+    return {
+      preview: {
+        to,
+        subject,
+        body,
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+});
+
+/**
  * Export all available tools
  * These will be provided to the AI model to describe available capabilities
  */
@@ -119,7 +142,8 @@ export const tools = {
   getLocalTime,
   scheduleTask,
   getScheduledTasks,
-  cancelScheduledTask
+  cancelScheduledTask,
+  composeEmail
 } satisfies ToolSet;
 
 /**
