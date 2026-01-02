@@ -19,7 +19,7 @@ import { tools, executions } from "./tools";
 import { env } from "cloudflare:workers";
 
 const workersAI = createWorkersAI({ binding: env.AI });
-const model = workersAI("@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+const model = workersAI("@cf/meta/llama-3.3-70b-instruct-fp8-fast" as any);
 
 /**
  * Chat Agent implementation that handles real-time AI chat interactions
@@ -57,7 +57,11 @@ export class Chat extends AIChatAgent<Env> {
         });
 
         const result = streamText({
-          system: `You are a helpful and friendly personal assistant that can do various tasks and answer various questions.
+          system: `You are a helpful and friendly personal assistant that can do various tasks.
+
+Try to use the available tools to complete the task. Answer directly to the question with best of your knowledge if the tool is not found.
+
+If the function call is not formatted correctly, refer to the format specified in the prompt, correct it, and try again.
 
 ${getSchedulePrompt({ date: new Date() })}
 

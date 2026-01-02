@@ -24,7 +24,8 @@ const getWeatherInformation = tool({
  * Uses Intl.DateTimeFormat to get the actual local time for a specified location
  */
 const getLocalTime = tool({
-  description: "get the local time for a specified location or timezone",
+  description:
+    "get the current local time for a specified location or timezone",
   inputSchema: z.object({
     location: z
       .string()
@@ -35,6 +36,9 @@ const getLocalTime = tool({
   }
 });
 
+/**
+ * Task scheduling tools
+ */
 const scheduleTask = tool({
   description: "A tool to schedule a task to be executed at a later time",
   inputSchema: scheduleSchema,
@@ -111,7 +115,7 @@ const cancelScheduledTask = tool({
 });
 
 /**
- * Tool to draft an email
+ * Tool to draft an email that executes automatically
  */
 const composeEmail = tool({
   description: "draft an email with given subject and recipient",

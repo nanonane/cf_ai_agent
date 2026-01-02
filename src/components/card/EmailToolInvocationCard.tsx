@@ -28,8 +28,7 @@ const generateMailtoLink = (to: string, subject: string, body: string) => {
  * Contains email preview and a mailto link to open in email client
  */
 export function EmailToolInvocationCard({
-  toolUIPart,
-  toolCallId
+  toolUIPart
 }: EmailToolInvocationCardProps) {
   const input = toolUIPart.input as PartInput;
 

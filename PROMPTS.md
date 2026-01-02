@@ -29,6 +29,7 @@ I used the prompt from [cloudflare workers prompting](https://developers.cloudfl
 **Add multiple conversations**
 
 - Please revise app.tsx and server.jsx, so that the application can manage multiple conversations, and ensure state persistency with memory and Durable Object
+- Make conversation item card to a separate component, and fix the problem "Actions triggered using mouse events should have corresponding keyboard events to account for keyboard-only navigation" when using `<div>` with `onClick` event handler
 
 **Tools**
 

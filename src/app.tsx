@@ -13,6 +13,7 @@ import { Avatar } from "@/components/avatar/Avatar";
 import { Toggle } from "@/components/toggle/Toggle";
 import { Textarea } from "@/components/textarea/Textarea";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { ConversationItem } from "@/components/conversation-item";
 import { ToolInvocationCard } from "@/components/card/ToolInvocationCard";
 
 // Icon imports
@@ -21,7 +22,6 @@ import {
   Moon,
   Robot,
   Sun,
-  Trash,
   PaperPlaneTilt,
   Stop
 } from "@phosphor-icons/react";
@@ -71,17 +71,19 @@ export default function Chat() {
     setTheme(newTheme);
   };
 
-  // Maintain conversations' metadata
+  // Conversations' metadata
   const [conversations, setConversations] = useState<
     { id: string; title: string; lastUpdated: Date }[]
   >(() => {
     const saved = localStorage.getItem("conversations");
     // Parse dates back into Date objects
     return saved
-      ? JSON.parse(saved).map((c: any) => ({
-          ...c,
-          lastUpdated: new Date(c.lastUpdated)
-        }))
+      ? JSON.parse(saved).map(
+          (c: { id: string; title: string; lastUpdated: string }) => ({
+            ...c,
+            lastUpdated: new Date(c.lastUpdated)
+          })
+        )
       : [];
   });
 
@@ -154,24 +156,7 @@ export default function Chat() {
     )
   );
 
-  useEffect(() => {
-    // Ensure there's always a current conversation when a conversation is deleted
-    if (!currentConversationId) {
-      createNewConversation();
-    }
-    // Save conversations to localStorage
-    localStorage.setItem("conversations", JSON.stringify(conversations));
-  }, [conversations]);
-
-  useEffect(() => {
-    if (currentConversationId) {
-      localStorage.setItem("currentConversationId", currentConversationId);
-    } else {
-      localStorage.removeItem("currentConversationId");
-    }
-  }, [currentConversationId]);
-
-  const createNewConversation = () => {
+  const createNewConversation = useCallback(() => {
     const newId = crypto.randomUUID();
     const newConversation = {
       id: newId,
@@ -182,6 +167,46 @@ export default function Chat() {
     setCurrentConversationId(newId);
     setAgentInput("");
     return newId;
+  }, []);
+
+  // Keep a ref to currentConversationId to use inside effects
+  const currentConversationIdRef = useRef(currentConversationId);
+
+  useEffect(() => {
+    currentConversationIdRef.current = currentConversationId;
+  }, [currentConversationId]);
+
+  useEffect(() => {
+    const currId = currentConversationIdRef.current;
+    // Ensure there's always a current conversation when a conversation is deleted
+    if (!currId) {
+      createNewConversation();
+    }
+    // Save conversations to localStorage
+    localStorage.setItem("conversations", JSON.stringify(conversations));
+  }, [conversations, createNewConversation]);
+
+  // Persist currentConversationId to localStorage
+  useEffect(() => {
+    if (currentConversationId) {
+      localStorage.setItem("currentConversationId", currentConversationId);
+    } else {
+      localStorage.removeItem("currentConversationId");
+    }
+  }, [currentConversationId]);
+
+  const handleDeleteConversation = (id: string) => {
+    const remaining = conversations.filter((c) => c.id !== id);
+    setConversations(remaining);
+    if (currentConversationId === id) {
+      // Deleted conversation was current
+      if (remaining.length > 0) {
+        setCurrentConversationId(remaining[0].id);
+      } else {
+        createNewConversation();
+      }
+      clearHistory();
+    }
   };
 
   const switchConversation = (id: string) => {
@@ -191,19 +216,20 @@ export default function Chat() {
 
   // Update conversation title and lastUpdated when messages change
   useEffect(() => {
-    if (currentConversationId && agentMessages.length > 0) {
+    const currId = currentConversationIdRef.current;
+    if (currId && agentMessages.length > 0) {
       const firstMessage = agentMessages[0];
       const firstTextPart = firstMessage?.parts?.find(
         (part) => part.type === "text"
       );
       const title =
         firstTextPart && "text" in firstTextPart
-          ? firstTextPart.text.slice(0, 30) + "..."
+          ? `${firstTextPart.text.slice(0, 30)}...`
           : "New Chat";
 
       setConversations((prev) =>
         prev.map((conv) =>
-          conv.id === currentConversationId
+          conv.id === currId
             ? {
                 ...conv,
                 title,
@@ -238,42 +264,14 @@ export default function Chat() {
           </div>
           <div className="space-y-2">
             {conversations.map((conv) => (
-              <div
+              <ConversationItem
                 key={conv.id}
-                className={`p-3 rounded-md cursor-pointer transition-colors group ${
-                  currentConversationId === conv.id
-                    ? "bg-blue-100 dark:bg-blue-900"
-                    : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div
-                    className="flex-1"
-                    onClick={() => switchConversation(conv.id)}
-                  >
-                    <p className="text-sm font-medium truncate">{conv.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatTime(conv.lastUpdated)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConversations((prev) =>
-                        prev.filter((c) => c.id !== conv.id)
-                      );
-                      if (currentConversationId === conv.id) {
-                        setCurrentConversationId(null);
-                        clearHistory(); // Clear history when deleting current conversation
-                      }
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded"
-                    aria-label="Delete conversation"
-                  >
-                    <Trash size={14} />
-                  </button>
-                </div>
-              </div>
+                conversation={conv}
+                isActive={currentConversationId === conv.id}
+                onSelect={switchConversation}
+                onDelete={() => handleDeleteConversation(conv.id)}
+                formatTime={formatTime}
+              />
             ))}
           </div>
         </div>
@@ -321,20 +319,10 @@ export default function Chat() {
             >
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
-
-            {/* <Button
-              variant="ghost"
-              size="md"
-              shape="square"
-              className="rounded-full h-9 w-9"
-              onClick={clearHistory}
-            >
-              <Trash size={20} />
-            </Button> */}
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 max-h-[calc(100vh-10rem)]">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-10rem)]">
             {agentMessages.length === 0 && (
               <div className="h-full flex items-center justify-center">
                 <Card className="p-6 max-w-md mx-auto bg-neutral-100 dark:bg-neutral-900">
@@ -453,14 +441,23 @@ export default function Chat() {
                                   toolUIPart={part}
                                   toolCallId={toolCallId}
                                   needsConfirmation={needsConfirmation}
-                                  onSubmit={({ toolCallId, result }) => {
+                                  onSubmit={({
+                                    toolCallId,
+                                    result
+                                  }: {
+                                    toolCallId: string;
+                                    result: string;
+                                  }) => {
                                     addToolResult({
                                       tool: part.type.replace("tool-", ""),
                                       toolCallId,
                                       output: result
                                     });
                                   }}
-                                  addToolResult={(toolCallId, result) => {
+                                  addToolResult={(
+                                    toolCallId: string,
+                                    result: string
+                                  ) => {
                                     addToolResult({
                                       tool: part.type.replace("tool-", ""),
                                       toolCallId,
@@ -493,7 +490,7 @@ export default function Chat() {
               });
               setTextareaHeight("auto"); // Reset height after submission
             }}
-            className="p-3 bg-neutral-50 absolute bottom-0 left-0 right-0 z-10 border-t border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900"
+            className="p-3 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-300 dark:border-neutral-800"
           >
             <div className="flex items-center gap-2">
               <div className="flex-1 relative">
