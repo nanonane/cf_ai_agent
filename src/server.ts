@@ -19,6 +19,7 @@ import { tools, executions } from "./tools";
 import { env } from "cloudflare:workers";
 
 const workersAI = createWorkersAI({ binding: env.AI });
+// biome-ignore lint/suspicious/noExplicitAny: Required for Workers AI model instantiation
 const model = workersAI("@cf/meta/llama-3.3-70b-instruct-fp8-fast" as any);
 
 /**
@@ -65,7 +66,7 @@ If the function call is not formatted correctly, refer to the format specified i
 
 ${getSchedulePrompt({ date: new Date() })}
 
-If the user asks to schedule a task, use the schedule tool to schedule the task.
+If the user asks to schedule a task, use the scheduleReminder tool to schedule the reminder.
 `,
 
           messages: convertToModelMessages(processedMessages),
@@ -86,7 +87,8 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
     return createUIMessageStreamResponse({ stream });
   }
 
-  async executeTask(description: string, _task: Schedule<string>) {
+  async executeReminder(description: string, _task: Schedule<string>) {
+    // Add reminder message to chat
     await this.saveMessages([
       ...this.messages,
       {
@@ -95,14 +97,35 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
         parts: [
           {
             type: "text",
-            text: `Running scheduled task: ${description}`
+            text: `Reminder: ${description}`
           }
         ],
         metadata: {
-          createdAt: new Date()
+          createdAt: new Date(),
+          isReminder: true
         }
       }
     ]);
+  }
+
+  /**
+   * Cancel all scheduled reminders for this agent instance
+   * Called when user deletes or switches conversations
+   */
+  async cancelAllReminders() {
+    try {
+      const schedules = this.getSchedules();
+      if (schedules && schedules.length > 0) {
+        for (const schedule of schedules) {
+          await this.cancelSchedule(schedule.id);
+        }
+        console.log(
+          `[${new Date().toISOString()}] Cancelled ${schedules.length} scheduled reminders`
+        );
+      }
+    } catch (error) {
+      console.error("Error cancelling all reminders:", error);
+    }
   }
 }
 

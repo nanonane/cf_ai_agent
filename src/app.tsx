@@ -15,6 +15,10 @@ import { Textarea } from "@/components/textarea/Textarea";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ConversationItem } from "@/components/conversation-item";
 import { ToolInvocationCard } from "@/components/card/ToolInvocationCard";
+import {
+  ReminderBanner,
+  type Reminder
+} from "@/components/reminder-banner/ReminderBanner";
 
 // Icon imports
 import {
@@ -41,6 +45,7 @@ export default function Chat() {
   });
   const [showDebug, setShowDebug] = useState(false);
   const [textareaHeight, setTextareaHeight] = useState("auto");
+  const [currentReminder, setCurrentReminder] = useState<Reminder | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -135,7 +140,10 @@ export default function Chat() {
     status,
     sendMessage,
     stop
-  } = useAgentChat<unknown, UIMessage<{ createdAt: string }>>({
+  } = useAgentChat<
+    unknown,
+    UIMessage<{ createdAt: string; isReminder?: boolean }>
+  >({
     agent
   });
 
@@ -143,6 +151,23 @@ export default function Chat() {
   useEffect(() => {
     agentMessages.length > 0 && scrollToBottom();
   }, [agentMessages, scrollToBottom]);
+
+  // Check for reminder messages and display banner
+  useEffect(() => {
+    const lastMessage = agentMessages[agentMessages.length - 1];
+    if (lastMessage?.metadata?.isReminder) {
+      const textPart = lastMessage.parts?.find((p) => p.type === "text");
+      if (textPart && "text" in textPart) {
+        // Extract reminder description from "Reminder: {description}" format
+        const reminderText = textPart.text.replace(/^Reminder:\s*/, "");
+        setCurrentReminder({
+          id: lastMessage.id,
+          description: reminderText,
+          createdAt: new Date()
+        });
+      }
+    }
+  }, [agentMessages]);
 
   const pendingToolCallConfirmation = agentMessages.some((m: UIMessage) =>
     m.parts?.some(
@@ -176,15 +201,10 @@ export default function Chat() {
     currentConversationIdRef.current = currentConversationId;
   }, [currentConversationId]);
 
+  // Save conversations' metadata to localStorage
   useEffect(() => {
-    const currId = currentConversationIdRef.current;
-    // Ensure there's always a current conversation when a conversation is deleted
-    if (!currId) {
-      createNewConversation();
-    }
-    // Save conversations to localStorage
     localStorage.setItem("conversations", JSON.stringify(conversations));
-  }, [conversations, createNewConversation]);
+  }, [conversations]);
 
   // Persist currentConversationId to localStorage
   useEffect(() => {
@@ -196,6 +216,10 @@ export default function Chat() {
   }, [currentConversationId]);
 
   const handleDeleteConversation = (id: string) => {
+    // Cancel all scheduled tasks and clear chat history
+    cancelAllScheduledTasks();
+    clearHistory();
+    // Remove conversation from list
     const remaining = conversations.filter((c) => c.id !== id);
     setConversations(remaining);
     if (currentConversationId === id) {
@@ -205,7 +229,16 @@ export default function Chat() {
       } else {
         createNewConversation();
       }
-      clearHistory();
+    }
+  };
+
+  const cancelAllScheduledTasks = async () => {
+    try {
+      // Call the backend method to cancel all scheduled reminders
+      await agent.call("cancelAllReminders");
+      console.log("Cancelled all scheduled reminders");
+    } catch (error) {
+      console.error("Error cancelling scheduled tasks:", error);
     }
   };
 
@@ -320,6 +353,12 @@ export default function Chat() {
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
           </div>
+
+          {/* Reminder Banner */}
+          <ReminderBanner
+            reminder={currentReminder}
+            onDismiss={() => setCurrentReminder(null)}
+          />
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-10rem)]">

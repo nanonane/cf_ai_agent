@@ -39,3 +39,6 @@ I used the prompt from [cloudflare workers prompting](https://developers.cloudfl
   - If I want to add an email-writing feature with a human-in-the-loop step that lets the user decide whether to send the email, what's the best practice for organizing the tools and frontend structure within the existing framework?
   - If I don’t want the agent to send emails via an API, but only need to open a preview in the user’s email client, can I simply provide a button that opens a mailto: link?
   - Please implement the email tool invocation card as a separate UI component, and let ToolInvocationCard decide whether to render this email card component.
+- Schedule reminder
+  - I want to add a new tool `scheduleReminder` that allows users to set reminders at specific times. The AI should be able to use this tool to schedule reminders, and when the time comes, a notification banner should appear on the webpage. Please implement the backend logic for scheduling reminders and the frontend component for displaying the notification banner.
+

@@ -39,8 +39,9 @@ const getLocalTime = tool({
 /**
  * Task scheduling tools
  */
-const scheduleTask = tool({
-  description: "A tool to schedule a task to be executed at a later time",
+const scheduleReminder = tool({
+  description:
+    "A tool to schedule a reminder that will notify the user at a later time",
   inputSchema: scheduleSchema,
   execute: async ({ when, description }) => {
     // we can now read the agent context from the ALS store
@@ -61,12 +62,12 @@ const scheduleTask = tool({
             ? when.cron // cron
             : throwError("not a valid schedule input");
     try {
-      agent!.schedule(input!, "executeTask", description);
+      agent!.schedule(input!, "executeReminder", description);
     } catch (error) {
-      console.error("error scheduling task", error);
-      return `Error scheduling task: ${error}`;
+      console.error("error scheduling reminder", error);
+      return `Error scheduling reminder: ${error}`;
     }
-    return `Task scheduled for type "${when.type}" : ${input}`;
+    return `Reminder scheduled for type "${when.type}" : ${input}`;
   }
 });
 
@@ -144,7 +145,7 @@ const composeEmail = tool({
 export const tools = {
   getWeatherInformation,
   getLocalTime,
-  scheduleTask,
+  scheduleReminder,
   getScheduledTasks,
   cancelScheduledTask,
   composeEmail
