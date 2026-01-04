@@ -95,7 +95,14 @@ export default function Chat() {
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
   >(() => {
-    return localStorage.getItem("currentConversationId") || null;
+    const savedId = localStorage.getItem("currentConversationId");
+    if (!savedId) {
+      if (conversations.length === 0) {
+        return null;
+      }
+      return conversations[0].id;
+    }
+    return savedId;
   });
 
   // Agent
@@ -201,7 +208,15 @@ export default function Chat() {
     currentConversationIdRef.current = currentConversationId;
   }, [currentConversationId]);
 
-  // Save conversations' metadata to localStorage
+  // Initialize conversation on mount
+  useEffect(() => {
+    // Only run initialization if no current conversation is selected
+    if (currentConversationIdRef.current === null) {
+      createNewConversation();
+    }
+  }, [createNewConversation]); // Only run once on mount
+
+  // Persist conversations' metadata to localStorage
   useEffect(() => {
     localStorage.setItem("conversations", JSON.stringify(conversations));
   }, [conversations]);
