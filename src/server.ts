@@ -67,6 +67,8 @@ If the function call is not formatted correctly, refer to the format specified i
 ${getSchedulePrompt({ date: new Date() })}
 
 If the user asks to schedule a task, use the scheduleReminder tool to schedule the reminder.
+
+Do not use the scheduleReminder tool when you see reminder messages (messages starting with Reminder:). These are automated notifications from previously scheduled tasks.
 `,
 
           messages: convertToModelMessages(processedMessages),
@@ -88,12 +90,30 @@ If the user asks to schedule a task, use the scheduleReminder tool to schedule t
   }
 
   async executeReminder(description: string, _task: Schedule<string>) {
-    // Add reminder message to chat
+    // Check if the conversation still exists and has messages
+    // If not, cancel this orphaned reminder task
+    if (this.messages.length === 0) {
+      console.log(
+        "Skipping and cancelling orphaned reminder for deleted conversation"
+      );
+      try {
+        await this.cancelSchedule(_task.id);
+        console.log(`Cancelled orphaned reminder task: ${_task.id}`);
+      } catch (error) {
+        console.error(
+          `Failed to cancel orphaned reminder task ${_task.id}:`,
+          error
+        );
+      }
+      return;
+    }
+
+    // Add reminder message to chat as assistant message to avoid triggering new reminder creation
     await this.saveMessages([
       ...this.messages,
       {
         id: generateId(),
-        role: "user",
+        role: "assistant",
         parts: [
           {
             type: "text",
@@ -106,26 +126,6 @@ If the user asks to schedule a task, use the scheduleReminder tool to schedule t
         }
       }
     ]);
-  }
-
-  /**
-   * Cancel all scheduled reminders for this agent instance
-   * Called when user deletes or switches conversations
-   */
-  async cancelAllReminders() {
-    try {
-      const schedules = this.getSchedules();
-      if (schedules && schedules.length > 0) {
-        for (const schedule of schedules) {
-          await this.cancelSchedule(schedule.id);
-        }
-        console.log(
-          `[${new Date().toISOString()}] Cancelled ${schedules.length} scheduled reminders`
-        );
-      }
-    } catch (error) {
-      console.error("Error cancelling all reminders:", error);
-    }
   }
 }
 

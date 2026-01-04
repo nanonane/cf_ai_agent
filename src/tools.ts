@@ -116,6 +116,39 @@ const cancelScheduledTask = tool({
 });
 
 /**
+ * Tool to cancel all scheduled tasks for the current conversation
+ * This executes automatically without requiring human confirmation
+ */
+const cancelAllScheduledTasks = tool({
+  description: "Cancel all scheduled tasks for the current conversation",
+  inputSchema: z.object({}),
+  execute: async () => {
+    const { agent } = getCurrentAgent<Chat>();
+    try {
+      const tasks = agent!.getSchedules();
+      if (!tasks || tasks.length === 0) {
+        return "No scheduled tasks to cancel.";
+      }
+
+      let cancelledCount = 0;
+      for (const task of tasks) {
+        try {
+          await agent!.cancelSchedule(task.id);
+          cancelledCount++;
+        } catch (error) {
+          console.error(`Error cancelling task ${task.id}:`, error);
+        }
+      }
+
+      return `Successfully cancelled ${cancelledCount} out of ${tasks.length} scheduled tasks.`;
+    } catch (error) {
+      console.error("Error cancelling all scheduled tasks", error);
+      return `Error cancelling scheduled tasks: ${error}`;
+    }
+  }
+});
+
+/**
  * Tool to draft an email that executes automatically
  */
 const composeEmail = tool({
@@ -148,6 +181,7 @@ export const tools = {
   scheduleReminder,
   getScheduledTasks,
   cancelScheduledTask,
+  cancelAllScheduledTasks,
   composeEmail
 } satisfies ToolSet;
 

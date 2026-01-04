@@ -216,29 +216,24 @@ export default function Chat() {
   }, [currentConversationId]);
 
   const handleDeleteConversation = (id: string) => {
-    // Cancel all scheduled tasks and clear chat history
-    cancelAllScheduledTasks();
-    clearHistory();
     // Remove conversation from list
     const remaining = conversations.filter((c) => c.id !== id);
     setConversations(remaining);
+
+    // Only cleanup and switch if deleting the current conversation
+    // For non-current conversations, their backend Agent instances will eventually be
+    // garbage collected by Durable Objects system when no longer accessed.
+    // Their scheduled tasks will be automatically cancelled by the server when they execute.
     if (currentConversationId === id) {
-      // Deleted conversation was current
+      // Clear chat history for this conversation
+      clearHistory();
+
+      // Switch to another conversation or create a new one
       if (remaining.length > 0) {
         setCurrentConversationId(remaining[0].id);
       } else {
         createNewConversation();
       }
-    }
-  };
-
-  const cancelAllScheduledTasks = async () => {
-    try {
-      // Call the backend method to cancel all scheduled reminders
-      await agent.call("cancelAllReminders");
-      console.log("Cancelled all scheduled reminders");
-    } catch (error) {
-      console.error("Error cancelling scheduled tasks:", error);
     }
   };
 
@@ -430,22 +425,20 @@ export default function Chat() {
                                         ? "rounded-br-none"
                                         : "rounded-bl-none border-assistant-border"
                                     } ${
-                                      part.text.startsWith("scheduled message")
+                                      part.text.startsWith("Reminder:")
                                         ? "border-accent/50"
                                         : ""
                                     } relative`}
                                   >
-                                    {part.text.startsWith(
-                                      "scheduled message"
-                                    ) && (
+                                    {part.text.startsWith("Reminder:") && (
                                       <span className="absolute -top-3 -left-2 text-base">
-                                        🕒
+                                        🔔
                                       </span>
                                     )}
                                     <MemoizedMarkdown
                                       id={`${m.id}-${i}`}
                                       content={part.text.replace(
-                                        /^scheduled message: /,
+                                        /^Reminder:\s*/,
                                         ""
                                       )}
                                     />

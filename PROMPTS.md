@@ -41,4 +41,4 @@ I used the prompt from [cloudflare workers prompting](https://developers.cloudfl
   - Please implement the email tool invocation card as a separate UI component, and let ToolInvocationCard decide whether to render this email card component.
 - Schedule reminder
   - I want to add a new tool `scheduleReminder` that allows users to set reminders at specific times. The AI should be able to use this tool to schedule reminders, and when the time comes, a notification banner should appear on the webpage. Please implement the backend logic for scheduling reminders and the frontend component for displaying the notification banner.
-
+  - I noticed that after deleting the current conversation, the scheduled recurring task would still execute. How to cancel the scheduled tasks when the conversation is deleted?
