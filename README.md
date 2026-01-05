@@ -11,9 +11,9 @@ An AI-powered chat assistant built using Cloudflare's Agent platform, based on [
   - Dark/Light Theme
 - 🔄 Contextual Memory: Maintains conversation history with Durable Objects for Agent instances (server) and localStorage (client)
 - 🛠️ Tool System
-  - Local time lookup: Get current time for a specified location
-  - Email composition with an option to open in mail client
-  - Reminder scheduling with banner notifications
+  - Local time lookup: Get current time for a specified location (e.g. "What's the currenttime in Pittsburgh?")
+  - Email composition with an option to open in mail client (e.g. "Compose a happy new year email to John Doe")
+  - Reminder scheduling with banner notifications (e.g. "Remind me to stand up and stretch every hour")
 - 📅 Advanced Task Scheduling
   - Schedule reminders for specific dates and times (one-time, delayed, and recurring via cron)
   - Task Management: List, cancel individual, or cancel all scheduled tasks
