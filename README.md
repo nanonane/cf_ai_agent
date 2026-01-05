@@ -1,4 +1,4 @@
-# 🤖 AI Chat Agent
+# AI Chat Agent
 
 An AI-powered chat assistant built using Cloudflare's Agent platform, based on [agents-starter](https://github.com/cloudflare/agents-starter/). Features a React interface with real-time streaming, tool integrations, and task reminder scheduling capabilities.
 
@@ -14,7 +14,6 @@ An AI-powered chat assistant built using Cloudflare's Agent platform, based on [
   - Local time lookup: Get current time for a specified location
   - Email composition with an option to open in mail client
   - Reminder scheduling with banner notifications
-  - // TODO: Plan todo list for given tasks, and set up reminders
 - 📅 Advanced Task Scheduling
   - Schedule reminders for specific dates and times (one-time, delayed, and recurring via cron)
   - Task Management: List, cancel individual, or cancel all scheduled tasks
@@ -24,7 +23,7 @@ An AI-powered chat assistant built using Cloudflare's Agent platform, based on [
 
 - Node.js (v16 or higher)
 - Cloudflare account with Workers AI enabled
-- Wrangler CLI (`npm install -g wrangler`)
+- Wrangler CLI
 
 ## Quick Start
 
