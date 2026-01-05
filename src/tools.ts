@@ -10,16 +10,6 @@ import { getCurrentAgent } from "agents";
 import { scheduleSchema } from "agents/schedule";
 
 /**
- * Weather information tool that requires human confirmation
- * When invoked, this will present a confirmation dialog to the user
- */
-const getWeatherInformation = tool({
-  description: "show the weather in a given city to the user",
-  inputSchema: z.object({ city: z.string() })
-  // Omitting execute function makes this tool require human confirmation
-});
-
-/**
  * Local time tool that executes automatically
  * Uses Intl.DateTimeFormat to get the actual local time for a specified location
  */
@@ -96,56 +86,22 @@ const getScheduledTasks = tool({
 
 /**
  * Tool to cancel a scheduled task by its ID
- * This executes automatically without requiring human confirmation
+ * This requires human in the loop confirmation
  */
 const cancelScheduledTask = tool({
   description: "Cancel a scheduled task using its ID",
   inputSchema: z.object({
     taskId: z.string().describe("The ID of the task to cancel")
-  }),
-  execute: async ({ taskId }) => {
-    const { agent } = getCurrentAgent<Chat>();
-    try {
-      await agent!.cancelSchedule(taskId);
-      return `Task ${taskId} has been successfully canceled.`;
-    } catch (error) {
-      console.error("Error canceling scheduled task", error);
-      return `TOOL_ERROR: Failed to cancel task ${taskId}: ${error}. Please verify the task ID exists and try again.`;
-    }
-  }
+  })
 });
 
 /**
  * Tool to cancel all scheduled tasks for the current conversation
- * This executes automatically without requiring human confirmation
+ * This requires human in the loop confirmation
  */
 const cancelAllScheduledTasks = tool({
   description: "Cancel all scheduled tasks for the current conversation",
-  inputSchema: z.object({}),
-  execute: async () => {
-    const { agent } = getCurrentAgent<Chat>();
-    try {
-      const tasks = agent!.getSchedules();
-      if (!tasks || tasks.length === 0) {
-        return "No scheduled tasks to cancel.";
-      }
-
-      let cancelledCount = 0;
-      for (const task of tasks) {
-        try {
-          await agent!.cancelSchedule(task.id);
-          cancelledCount++;
-        } catch (error) {
-          console.error(`Error cancelling task ${task.id}:`, error);
-        }
-      }
-
-      return `Successfully cancelled ${cancelledCount} out of ${tasks.length} scheduled tasks.`;
-    } catch (error) {
-      console.error("Error cancelling all scheduled tasks", error);
-      return `TOOL_ERROR: Failed to cancel all scheduled tasks: ${error}. Please try again.`;
-    }
-  }
+  inputSchema: z.object({})
 });
 
 /**
@@ -176,7 +132,6 @@ const composeEmail = tool({
  * These will be provided to the AI model to describe available capabilities
  */
 export const tools = {
-  getWeatherInformation,
   getLocalTime,
   scheduleReminder,
   getScheduledTasks,
@@ -191,9 +146,39 @@ export const tools = {
  * Each function here corresponds to a tool above that doesn't have an execute function
  */
 export const executions = {
-  getWeatherInformation: async ({ city }: { city: string }) => {
-    console.log(`Getting weather information for ${city}`);
-    return `The weather in ${city} is sunny`;
+  cancelScheduledTask: async ({ taskId }: { taskId: string }) => {
+    const { agent } = getCurrentAgent<Chat>();
+    try {
+      await agent!.cancelSchedule(taskId);
+      return `Task ${taskId} has been successfully canceled.`;
+    } catch (error) {
+      console.error("Error canceling scheduled task", error);
+      return `TOOL_ERROR: Failed to cancel task ${taskId}: ${error}. Please verify the task ID exists and try again.`;
+    }
+  },
+  cancelAllScheduledTasks: async () => {
+    const { agent } = getCurrentAgent<Chat>();
+    try {
+      const tasks = agent!.getSchedules();
+      if (!tasks || tasks.length === 0) {
+        return "No scheduled tasks to cancel.";
+      }
+
+      let cancelledCount = 0;
+      for (const task of tasks) {
+        try {
+          await agent!.cancelSchedule(task.id);
+          cancelledCount++;
+        } catch (error) {
+          console.error(`Error cancelling task ${task.id}:`, error);
+        }
+      }
+
+      return `Successfully cancelled ${cancelledCount} out of ${tasks.length} scheduled tasks.`;
+    } catch (error) {
+      console.error("Error cancelling all scheduled tasks", error);
+      return `TOOL_ERROR: Failed to cancel all scheduled tasks: ${error}. Please try again.`;
+    }
   }
 };
 

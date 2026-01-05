@@ -33,8 +33,9 @@ import {
 // List of tools that require human confirmation
 // NOTE: this should match the tools that don't have execute functions in tools.ts
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
-  "getWeatherInformation",
-  "composeEmail"
+  "composeEmail",
+  "cancelScheduledTask",
+  "cancelAllScheduledTasks"
 ];
 
 export default function Chat() {
@@ -198,7 +199,9 @@ export default function Chat() {
 
     const messageText = textPart.text;
     const isFormattingError =
-      messageText.includes("not") && messageText.includes("format");
+      messageText.includes("not") &&
+      messageText.includes("format") &&
+      messageText.includes("function");
 
     // Mark message as processed
     processedMessageIds.current.add(lastMessage.id);

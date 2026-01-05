@@ -61,22 +61,17 @@ export class Chat extends AIChatAgent<Env> {
           system: `You are a helpful and friendly personal assistant that can do various tasks.
 
 CRITICAL TOOL USAGE INSTRUCTIONS:
-- When you need to use a tool, generate the tool call directly without announcing it
-- Execute tools immediately when needed - do not describe or show the function call JSON
-- Provide direct answers to users based on tool results
-- Never output messages like "Your function call is:" or show tool call JSON to users
-
-TOOL EXECUTION:
-- Use tools automatically when the user asks for information that requires them
-- Return tool results directly to the user without mentioning the tool execution
+- Use tools automatically when the user asks for information that requires them. Try to use provided tools to complete the user's request as much as possible.
+- When a tool call is needed, directly call the tool function, then return tool results to the user. Do NOT return messages like "your function call is:" or show tool call parameters JSON to the user.
 - If a tool fails, fix the issue and retry next time.
-- When users ask to "set a reminder", "schedule something", or similar, use scheduleReminder tool immediately
 
 ${getSchedulePrompt({ date: new Date() })}
 
-If the user asks to schedule a task, use the scheduleReminder tool to schedule the reminder.
-
-Do not use the scheduleReminder tool when you see reminder messages (messages starting with Reminder:). These are automated notifications from previously scheduled tasks.
+- When users ask to "set a reminder", "schedule something", or similar, use scheduleReminder tool.
+- When user asks to "list all the reminders", "show all the tasks", or similar, call getScheduledTasks tool.
+- When user asks to "cancel the reminder", use cancelScheduledTask or cancelAllScheduledTasks tool, based on user's message.
+- IMPORTANT: Messages starting with "Reminder:" are SYSTEM-GENERATED notifications from previously scheduled tasks. NEVER use any tools when you see these messages. Do not respond to them as if they were user requests. 
+- For each reminder, you should only call the scheduleReminder tool once per user request. Do not create duplicate reminders.
 `,
 
           messages: convertToModelMessages(processedMessages),
