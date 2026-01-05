@@ -176,6 +176,60 @@ export default function Chat() {
     }
   }, [agentMessages]);
 
+  // Track processed message IDs to prevent duplicate retries
+  const processedMessageIds = useRef<Set<string>>(new Set());
+
+  // Auto-retry mechanism for tool call formatting errors
+  useEffect(() => {
+    const lastMessage = agentMessages[agentMessages.length - 1];
+
+    // Early returns to reduce nesting
+    if (
+      lastMessage?.role !== "assistant" ||
+      processedMessageIds.current.has(lastMessage.id)
+    ) {
+      return;
+    }
+
+    const textPart = lastMessage.parts?.find((p) => p.type === "text");
+    if (!textPart || !("text" in textPart)) {
+      return;
+    }
+
+    const messageText = textPart.text;
+    const isFormattingError =
+      messageText.includes("not") && messageText.includes("format");
+
+    // Mark message as processed
+    processedMessageIds.current.add(lastMessage.id);
+
+    if (!isFormattingError) {
+      return;
+    }
+
+    console.log("Detected tool call formatting error, triggering retry...");
+
+    // Find the last user message before the error
+    const lastUserMessage = [...agentMessages.slice(0, -1)]
+      .reverse()
+      .find((m: UIMessage) => m.role === "user");
+
+    const userTextPart = lastUserMessage?.parts?.find(
+      (p: UIMessage["parts"][0]) => p.type === "text"
+    );
+    if (!userTextPart || !("text" in userTextPart)) {
+      return;
+    }
+
+    // Retry with the user's original message
+    setTimeout(() => {
+      sendMessage({
+        role: "user",
+        parts: [{ type: "text", text: userTextPart.text }]
+      });
+    }, 100);
+  }, [agentMessages, sendMessage]);
+
   const pendingToolCallConfirmation = agentMessages.some((m: UIMessage) =>
     m.parts?.some(
       (part) =>
@@ -394,6 +448,10 @@ export default function Chat() {
                       <li className="flex items-center gap-2">
                         <span className="text-[#F48120]">•</span>
                         <span>Drafting and Email to someone</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#F48120]">•</span>
+                        <span>Reminder for tasks</span>
                       </li>
                     </ul>
                   </div>

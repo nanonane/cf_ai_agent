@@ -60,9 +60,17 @@ export class Chat extends AIChatAgent<Env> {
         const result = streamText({
           system: `You are a helpful and friendly personal assistant that can do various tasks.
 
-Try to use the available tools to complete the task. Answer directly to the question with best of your knowledge if the tool is not found.
+CRITICAL TOOL USAGE INSTRUCTIONS:
+- When you need to use a tool, generate the tool call directly without announcing it
+- Execute tools immediately when needed - do not describe or show the function call JSON
+- Provide direct answers to users based on tool results
+- Never output messages like "Your function call is:" or show tool call JSON to users
 
-If the function call is not formatted correctly, refer to the format specified in the prompt, correct it, and try again.
+TOOL EXECUTION:
+- Use tools automatically when the user asks for information that requires them
+- Return tool results directly to the user without mentioning the tool execution
+- If a tool fails, fix the issue and retry next time.
+- When users ask to "set a reminder", "schedule something", or similar, use scheduleReminder tool immediately
 
 ${getSchedulePrompt({ date: new Date() })}
 
@@ -79,6 +87,11 @@ Do not use the scheduleReminder tool when you see reminder messages (messages st
           onFinish: onFinish as unknown as StreamTextOnFinishCallback<
             typeof allTools
           >,
+          onError: (error) => {
+            // Handle tool call formatting errors by triggering a retry
+            console.log("Tool call error detected:", error);
+            // The error will be handled by the framework, but we can log it for debugging
+          },
           stopWhen: stepCountIs(10)
         });
 

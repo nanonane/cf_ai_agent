@@ -51,7 +51,7 @@ const scheduleReminder = tool({
       throw new Error(msg);
     }
     if (when.type === "no-schedule") {
-      return "Not a valid schedule input";
+      return "TOOL_ERROR: Invalid schedule type 'no-schedule'. Please provide a valid schedule type: 'scheduled' (with date), 'delayed' (with delayInSeconds), or 'cron' (with cron expression).";
     }
     const input =
       when.type === "scheduled"
@@ -65,9 +65,9 @@ const scheduleReminder = tool({
       agent!.schedule(input!, "executeReminder", description);
     } catch (error) {
       console.error("error scheduling reminder", error);
-      return `Error scheduling reminder: ${error}`;
+      return `TOOL_ERROR: Failed to schedule reminder: ${error}. Please check the schedule parameters and try again.`;
     }
-    return `Reminder scheduled for type "${when.type}" : ${input}`;
+    return `Reminder scheduled successfully for type "${when.type}": ${input}`;
   }
 });
 
@@ -110,7 +110,7 @@ const cancelScheduledTask = tool({
       return `Task ${taskId} has been successfully canceled.`;
     } catch (error) {
       console.error("Error canceling scheduled task", error);
-      return `Error canceling task ${taskId}: ${error}`;
+      return `TOOL_ERROR: Failed to cancel task ${taskId}: ${error}. Please verify the task ID exists and try again.`;
     }
   }
 });
@@ -143,7 +143,7 @@ const cancelAllScheduledTasks = tool({
       return `Successfully cancelled ${cancelledCount} out of ${tasks.length} scheduled tasks.`;
     } catch (error) {
       console.error("Error cancelling all scheduled tasks", error);
-      return `Error cancelling scheduled tasks: ${error}`;
+      return `TOOL_ERROR: Failed to cancel all scheduled tasks: ${error}. Please try again.`;
     }
   }
 });
@@ -228,10 +228,11 @@ function getLocalTimeByLocation(location: string): string {
     // If the timezone is invalid, throw a descriptive error
     if (error instanceof RangeError) {
       throw new Error(
-        `"${normalizedLocation}" is not a valid timezone or location. ` +
-          `Please use a valid IANA timezone (e.g., "America/New_York", "Asia/Tokyo").`
+        `TOOL_ERROR: Invalid timezone "${normalizedLocation}". Please use a valid IANA timezone (e.g., "America/New_York", "Asia/Tokyo").`
       );
     }
-    throw error;
+    throw new Error(
+      `TOOL_ERROR: Failed to get local time for "${normalizedLocation}": ${error}`
+    );
   }
 }
